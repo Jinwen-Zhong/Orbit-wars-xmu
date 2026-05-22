@@ -1,4 +1,3 @@
-```gitignore
 # Python cache
 __pycache__/
 *.py[cod]
@@ -20,19 +19,30 @@ env/
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables and credentials
 .env
+kaggle.json
+access_token
 
-# Logs
+# Logs and temporary files
 *.log
-
-# Large or temporary experiment outputs
-results/raw/
 *.tmp
+logs/
 
-# Model binary files
+# Experiment outputs
+results/raw/
+replays/
+*.html
+
+# Submission bundles
+submission.tar.gz
+submission.zip
+*.tar.gz
+*.zip
+
+# Model and checkpoint files
 *.pkl
 *.joblib
-
-# Kaggle credentials
-kaggle.json
+*.pt
+*.pth
+*.ckpt
