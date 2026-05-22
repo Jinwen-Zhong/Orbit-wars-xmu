@@ -1,2 +1,0 @@
-date,version,bot_file,opponent,seed,reward,status,notes
-5.24,V1,versions/v1_baseline.py,random,0,120,DONE,nearest target
