@@ -8,8 +8,8 @@ import csv
 # 1. 实验设置
 # =========================
 
-N_GAMES = 10
-SEEDS = range(N_GAMES)
+N_GAMES = 10   # 局数在这里修改
+SEEDS = range(N_GAMES)   # 每局游戏的随机种子，在对比不同版本时保持一致，确保公平对比
 OPPONENT = "random"
 
 # 对应的 bot 路径，如果只对比某几个可以先把其他的comment掉
