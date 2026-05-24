@@ -15,7 +15,7 @@ OPPONENT = "random"
 # 对应的 bot 路径，如果只对比某几个可以先把其他的comment掉
 BOT_FILES = {
     "V1_baseline": "versions/v1_baseline.py",
-    #"V2_expansion": "versions/v2_expansion.py",
+    "V2_expansion": "versions/v2_expansion.py",
     #"V3_defense": "versions/v3_defense.py",
     #"Final": "versions/final.py",
 }
