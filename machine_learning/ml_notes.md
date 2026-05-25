@@ -15,17 +15,12 @@ We adopt a similar idea while keeping the strategy interpretable.
 Current versions (V1/V2/V3) use heuristic rules:
 
 Game State
-
 ↓
-
 Score Function
-
 ↓
-
 Select Best Target
 
 For example:
-
 score = production / (distance + ships + 1)
 
 ---
@@ -37,17 +32,11 @@ Future versions may replace hand-crafted scoring with a lightweight action ranki
 Pipeline:
 
 Game State
-
 ↓
-
 Generate Candidate Actions
-
 ↓
-
 ML scores candidates
-
 ↓
-
 Select best action
 
 Examples:
@@ -81,17 +70,13 @@ Global features:
 Additional feature:
 
 future_target_ships
-
-=
-
-target_ships + distance × production
+=target_ships + distance × production
 
 ---
 
 ## Current Limitation
 
 Current experiments only store:
-
 - seed
 - reward
 - win/loss
@@ -99,9 +84,7 @@ Current experiments only store:
 Training ML models requires:
 
 State
-
 Action
-
 Outcome
 
 The dataset is currently insufficient.
