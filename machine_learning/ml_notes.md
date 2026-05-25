@@ -2,7 +2,7 @@
 
 ## Inspiration
 
-Our design is inspired by the official Orbit Wars reinforcement learning tutorial.
+Based on the Orbit Wars reinforcement learning tutorial on Kaggle, we designed the following lightweight approach.  
 
 Instead of directly controlling the whole bot, the tutorial simplifies decision making into candidate action selection.
 
@@ -97,7 +97,7 @@ State
 Action
 Outcome
 
-The dataset is currently insufficient.
+An adequately large sample dataset containing the aforementioned features has not been sufficiently collected at present.
 
 ---
 
