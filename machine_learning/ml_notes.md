@@ -15,9 +15,13 @@ We adopt a similar idea while keeping the strategy interpretable.
 Current versions (V1/V2/V3) use heuristic rules:
 
 Game State
+
 ↓
+
 Score Function
+
 ↓
+
 Select Best Target
 
 For example:
@@ -32,11 +36,17 @@ Future versions may replace hand-crafted scoring with a lightweight action ranki
 Pipeline:
 
 Game State
+
 ↓
+
 Generate Candidate Actions
+
 ↓
+
 ML scores candidates
+
 ↓
+
 Select best action
 
 Examples:
