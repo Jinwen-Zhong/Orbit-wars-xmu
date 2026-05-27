@@ -2,43 +2,45 @@
 
 ## Motivation
 
-Current versions of our bot mainly rely on heuristic rules for decision making.
+The current bot mainly relies on heuristic rules for decision making.
 
-For example, V2 uses:
+Early versions used relatively simple rules. For example, V2 introduced:
 
 score = production / (distance + ships + 1)
 
-The intuition is simple: prefer planets with high production while avoiding distant or heavily defended targets.
+The intuition is straightforward: planets with high production are attractive, while distant or heavily defended targets are less desirable.
 
-As the project evolved, more manually designed components were introduced, including defense reservation, attack constraints, and target prioritization.
+As the project evolved, more components were gradually added, including defense reservation, threat detection, target prioritization, travel prediction, and environmental constraints.
 
-As more rules are added, interactions between them become increasingly difficult to tune manually.
+These additions improved performance, but they also made the system harder to tune manually. Once multiple rules start interacting, adjusting one parameter can unexpectedly affect the behavior of others.
 
-This motivates exploring a lightweight ML extension that learns action quality from data instead of relying entirely on manually adjusted thresholds.
-
-After reading the official Orbit Wars reinforcement learning tutorial, we considered a lightweight machine learning extension. The goal is not to let ML control the entire bot, but to see whether it can help evaluate candidate actions.
+After reviewing the official Orbit Wars reinforcement learning tutorial, we considered introducing a lightweight ML component. The goal is not to replace the entire strategy, but to explore whether ML can help evaluate candidate actions.
 
 ---
 
 ## Current Decision Logic
 
-At the current stage, the bot follows a heuristic-based decision pipeline:
+At the current stage, the bot follows a heuristic-based pipeline:
 
 Game State
 
 ↓
 
-Calculate heuristic score
+Apply strategy rules
 
 ↓
 
-Choose the best target
+Evaluate candidate targets
 
-Examples:
+↓
+
+Select best action
+
+The strategy evolved gradually over several versions.
 
 V1:
 
-Select the nearest target.
+Select the nearest available target.
 
 V2:
 
@@ -46,38 +48,42 @@ Introduce a score function:
 
 score = production / (distance + ships + 1)
 
-to balance potential gain and attack cost.
+to balance expected gain and attack cost.
 
 V3:
 
-Add a reserve mechanism:
+Introduce defense reservation:
 
 reserve = ships × reserve_ratio
 
-to avoid sending all fleets and improve defense.
+to avoid overcommitting fleets.
 
-The stronger opponent version further introduces:
+The final heuristic version further adds:
 
+- dynamic defense reservation
+- nearby threat detection
 - target prioritization
-- attack distance constraints
-- advantage checks
+- travel-time production estimation
+- orbital position prediction
+- sun avoidance
+- attack constraints
 - simple target coordination
 
-These changes make decisions less dependent on a single rule and more dependent on multiple interacting conditions.
+The system has gradually shifted from a single-rule strategy toward a combination of interacting heuristics.
 
 ---
 
 ## Proposed ML Idea
 
-Instead of replacing the whole strategy, ML can be introduced as an additional ranking component.
+Instead of replacing the entire strategy, ML can be introduced as an additional ranking layer.
 
-The overall process could look like:
+A possible workflow is:
 
 Game State
 
 ↓
 
-Generate several candidate actions
+Generate candidate actions
 
 ↓
 
@@ -85,7 +91,7 @@ Extract features
 
 ↓
 
-ML model evaluates each action
+ML evaluates action quality
 
 ↓
 
@@ -98,7 +104,7 @@ Examples of candidate actions:
 - keep defending
 - take no action
 
-Under this design, heuristic rules still generate actions, while ML only helps decide which action looks more promising.
+Under this design, heuristic rules still generate candidate actions, while ML only helps rank them.
 
 This keeps the strategy relatively interpretable and avoids turning the bot into a complete black box.
 
@@ -106,7 +112,7 @@ This keeps the strategy relatively interpretable and avoids turning the bot into
 
 ## Candidate Features
 
-Possible features can be grouped into local information, defense-related information, strategy-related information, and global information.
+Possible features can be grouped into local information, defense-related information, strategy-related information, environment-related information, and global information.
 
 Local information:
 
@@ -122,12 +128,21 @@ Defense-related:
 - reserve_ratio
 - reserve_after_send
 - available_ships
+- is_threatened
 
 Strategy-related:
 
 - attack_advantage_ratio
 - target_priority
-- target_already_assigned
+- is_target_assigned
+
+Environment-related:
+
+- travel_time
+- predicted_distance
+- future_target_ships
+- orbital_target_flag
+- sun_path_blocked
 
 Global information:
 
@@ -141,23 +156,25 @@ Additional feature:
 
 future_target_ships
 
-= target_ships + distance × production
+= target_ships + production × travel_time
 
-This approximates target growth during fleet travel time.
+This approximates the number of ships a target may accumulate before our fleet arrives.
+
+Some recent strategies already rely on future estimation rather than only using current observations.
 
 ---
 
 ## Data Collection
 
-At the moment, experiment outputs mainly record:
+Current experiment outputs mainly record:
 
 - seed
 - reward
 - win/loss result
 
-This information is useful for comparison, but not enough for training a model.
+These records are useful for comparison, but not sufficient for ML training.
 
-If ML is added later, more detailed records will be needed.
+If ML is introduced later, more detailed information should be stored.
 
 For each game turn and decision step, we may record:
 
@@ -165,6 +182,9 @@ State:
 
 - local features
 - global features
+- environmental features
+- threat status
+- predicted orbital information
 
 Action:
 
@@ -183,7 +203,7 @@ Data can be generated automatically through self-play experiments such as:
 - V2 vs V3
 - Strong Opponent vs Final
 
-The overall structure becomes:
+The resulting structure becomes:
 
 State → Action → Outcome
 
@@ -191,7 +211,7 @@ State → Action → Outcome
 
 ## Possible Training Pipeline
 
-If enough data becomes available, the training process could be:
+If enough data becomes available, a possible workflow could be:
 
 Step 1:
 
@@ -208,11 +228,17 @@ State + Action
 Output:
 
 Action quality score
-(e.g., reward or estimated winning probability)
+
+Examples:
+
+- reward
+- estimated winning probability
+
+Because some strategies already depend on future estimation (such as orbital prediction and production growth during travel), feature preprocessing may also include future-state approximation.
 
 Step 3:
 
-Train a lightweight model, for example:
+Train lightweight models such as:
 
 - Logistic Regression
 - Random Forest
@@ -220,7 +246,7 @@ Train a lightweight model, for example:
 
 Step 4:
 
-Use model predictions to replace hand-designed scores.
+Use model predictions to replace hand-designed scoring functions.
 
 For example:
 
@@ -228,7 +254,7 @@ Current:
 
 score = production / (distance + ships + 1)
 
-Potential replacement:
+Possible replacement:
 
 score = model.predict(features)
 
@@ -236,29 +262,29 @@ score = model.predict(features)
 
 ## Current Limitation
 
-The main issue is data size.
+The main limitation is still data availability.
 
-At the current stage, the project does not produce enough training samples for a stable machine learning model.
+The project currently does not generate enough samples for stable model training.
 
-Another concern is interpretability. Replacing heuristic strategies with a fully learned policy too early may make the bot harder to understand and debug.
+Another issue is that the strategy itself is still evolving. As new heuristics continue to be added, the feature set and decision process may also change.
 
-For this reason, ML is currently viewed as an experimental extension rather than a core component.
+Interpretability is another concern. Replacing heuristic strategies with a fully learned model too early may make the bot harder to understand and debug.
 
-In addition, the current versions are still evolving, which means the feature set and decision logic may continue to change.
+For now, ML is viewed as an experimental extension rather than a core component.
 
 ---
 
 ## Future Work
 
-Future work may focus on:
+Future work may include:
 
 - collecting larger self-play datasets
 - testing lightweight ranking models
-- trying reinforcement learning approaches
-- combining heuristic rules with ML methods
+- trying reinforcement learning methods
+- combining heuristic rules with ML approaches
 
 Rather than replacing heuristic strategies completely, ML is expected to serve as a ranking layer on top of existing rules.
 
-For now, the project mainly focuses on building reliable and explainable strategies first.
+For now, the main focus remains building reliable and explainable strategies first.
 
 The current goal is therefore not to build a full ML agent, but to prepare a framework for future experiments.
