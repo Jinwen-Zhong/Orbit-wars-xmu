@@ -2,15 +2,19 @@
 
 ## Motivation
 
-Current versions of our bot (V1/V2/V3) mainly rely on heuristic rules for decision making.
+Current versions of our bot mainly rely on heuristic rules for decision making.
 
 For example, V2 uses:
 
 score = production / (distance + ships + 1)
 
-The basic idea is straightforward: prefer planets with high production while avoiding targets that are far away or heavily defended.
+The intuition is simple: prefer planets with high production while avoiding distant or heavily defended targets.
 
-This approach works reasonably well and is easy to understand. However, hand-crafted rules also have limitations. As the game becomes more complex, manually designed formulas may miss interactions between multiple factors.
+As the project evolved, more manually designed components were introduced, including defense reservation, attack constraints, and target prioritization.
+
+As more rules are added, interactions between them become increasingly difficult to tune manually.
+
+This motivates exploring a lightweight ML extension that learns action quality from data instead of relying entirely on manually adjusted thresholds.
 
 After reading the official Orbit Wars reinforcement learning tutorial, we considered a lightweight machine learning extension. The goal is not to let ML control the entire bot, but to see whether it can help evaluate candidate actions.
 
@@ -18,7 +22,7 @@ After reading the official Orbit Wars reinforcement learning tutorial, we consid
 
 ## Current Decision Logic
 
-At the current stage, the bot follows a simple pipeline:
+At the current stage, the bot follows a heuristic-based decision pipeline:
 
 Game State
 
@@ -38,15 +42,28 @@ Select the nearest target.
 
 V2:
 
-Use a manually designed score function:
+Introduce a score function:
 
 score = production / (distance + ships + 1)
 
+to balance potential gain and attack cost.
+
 V3:
 
-Add defensive considerations by reserving part of the fleet.
+Add a reserve mechanism:
 
-Compared with V1, later versions already consider more strategic information, but the scoring function is still manually designed.
+reserve = ships × reserve_ratio
+
+to avoid sending all fleets and improve defense.
+
+The stronger opponent version further introduces:
+
+- target prioritization
+- attack distance constraints
+- advantage checks
+- simple target coordination
+
+These changes make decisions less dependent on a single rule and more dependent on multiple interacting conditions.
 
 ---
 
@@ -89,7 +106,7 @@ This keeps the strategy relatively interpretable and avoids turning the bot into
 
 ## Candidate Features
 
-Possible features can be divided into local information and global information.
+Possible features can be grouped into local information, defense-related information, strategy-related information, and global information.
 
 Local information:
 
@@ -98,8 +115,19 @@ Local information:
 - source_production
 - target_ships
 - target_production
-- reserve_after_send
 - target_owner
+
+Defense-related:
+
+- reserve_ratio
+- reserve_after_send
+- available_ships
+
+Strategy-related:
+
+- attack_advantage_ratio
+- target_priority
+- target_already_assigned
 
 Global information:
 
@@ -109,15 +137,13 @@ Global information:
 - enemy_planet_count
 - round_id
 
-We may also include:
+Additional feature:
 
 future_target_ships
 
 = target_ships + distance × production
 
-The purpose of this feature is to roughly estimate how many ships the target planet may accumulate before our fleet arrives.
-
-This is important because current versions mainly consider the target's current state, while ignoring growth during travel time.
+This approximates target growth during fleet travel time.
 
 ---
 
@@ -133,7 +159,7 @@ This information is useful for comparison, but not enough for training a model.
 
 If ML is added later, more detailed records will be needed.
 
-For each decision step, we may record:
+For each game turn and decision step, we may record:
 
 State:
 
@@ -181,7 +207,8 @@ State + Action
 
 Output:
 
-Reward or winning probability
+Action quality score
+(e.g., reward or estimated winning probability)
 
 Step 3:
 
@@ -217,6 +244,8 @@ Another concern is interpretability. Replacing heuristic strategies with a fully
 
 For this reason, ML is currently viewed as an experimental extension rather than a core component.
 
+In addition, the current versions are still evolving, which means the feature set and decision logic may continue to change.
+
 ---
 
 ## Future Work
@@ -228,4 +257,8 @@ Future work may focus on:
 - trying reinforcement learning approaches
 - combining heuristic rules with ML methods
 
+Rather than replacing heuristic strategies completely, ML is expected to serve as a ranking layer on top of existing rules.
+
 For now, the project mainly focuses on building reliable and explainable strategies first.
+
+The current goal is therefore not to build a full ML agent, but to prepare a framework for future experiments.
