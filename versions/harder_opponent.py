@@ -1,15 +1,10 @@
 import math
 from kaggle_environments.envs.orbit_wars.orbit_wars import Planet
 
-RESERVE_RATIO = 0.3  
-EARLY_EXPANSION_PLANETS = 3
 
+RESERVE_RATIO = 0.25
+MIN_RESERVE = 5
 
-def reserve_for(mine, target, my_planet_count):
-    if target.owner == -1 and my_planet_count <= EARLY_EXPANSION_PLANETS:
-        return 0
-
-    return int(mine.ships * RESERVE_RATIO)
 
 def agent(obs):
     moves = []
@@ -18,7 +13,6 @@ def agent(obs):
     raw_planets = obs.get("planets", []) if isinstance(obs, dict) else obs.planets
 
     planets = [Planet(*p) for p in raw_planets]
-
     my_planets = [p for p in planets if p.owner == player]
     targets = [p for p in planets if p.owner != player]
 
@@ -40,15 +34,10 @@ def agent(obs):
         if best_target is None:
             continue
 
-        reserve = reserve_for(mine, best_target, len(my_planets))
-        available = mine.ships - reserve
-
-        if available < 1:
-            continue
-
+        reserve = max(MIN_RESERVE, int(mine.ships * RESERVE_RATIO))
         ships_needed = best_target.ships + 1
 
-        if available >= ships_needed:
+        if mine.ships >= ships_needed + reserve:
             angle = math.atan2(best_target.y - mine.y, best_target.x - mine.x)
             moves.append([mine.id, angle, ships_needed])
 
